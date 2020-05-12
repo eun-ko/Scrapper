@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Scrapped results</title>
+    <style>
+        section {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(2, 1fr);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>실시간 네이버 속보</h1>
+    <section>
+        <h4>기사 제목 : </h4>
+        <h4>언론사 : </h4>
+
+        {% for article in news %}
+        <span> {{article.title}}</span>
+        <span> {{article.company}}</span>
+        {% endfor %}
+    </section>
+</body>
