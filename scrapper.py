@@ -3,7 +3,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 import csv
 
-URL="https://store.musinsa.com/app/items/lists/001/?category=&d_cat_cd=001&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
+URL="https://store.musinsa.com/app/items/lists/002017/?category=&d_cat_cd=002017&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
 
 def get_last_page():
     result=requests.get(URL)
@@ -16,12 +16,19 @@ def get_image(max_page):
     for page in range(max_page):
         result=requests.get(f"{URL}&page={page+1}")
         soup=BeautifulSoup(result.text,"html.parser")
-        img=soup.select("#searchList > li > div.li_inner > div.list_img > a > img")
+        images=soup.find_all("li",{"class":"li_box"})
         print(f"{page+1}페이지 긁어오는중~~~\n")
-        for i in img:
-            imgUrl=i["data-original"]
-            print("https:"+imgUrl)
-            urllib.request.urlretrieve("https:"+imgUrl,(i["alt"]+'.jpg').replace("/"," "))
+        for img in images:
+            image=img.find("div",{"class":"list_img"}).find("a").get("href")
+            # 상세페이지 태그
+            imgurl=f"https://store.musinsa.com{image}"
+            res=requests.get(imgurl)
+            sp=BeautifulSoup(res.text,"html.parser")
+            highresolImg=sp.find("div",{"class":"product-img"}).find("img")
+            # 상세페이지의 대표 상품 이미지
+            imgURL=highresolImg.get("src")
+            imgName=highresolImg.get("alt")
+            urllib.request.urlretrieve("https:"+imgURL,(imgName+".jpg").replace("/"," "))
             #이미지 저장시 상품명에 '/'포함시 디렉토리 경로로 인식함ㅠ->/를 space로 대체
 #urlretrieve는 다운로드 함수
 #img.alt는 이미지 대체 텍스트
@@ -61,6 +68,6 @@ def get_items(max_page):
     save_to_file(list)
     return list
 
-save_to_file(get_items(get_last_page()))        
+save_to_file(get_items(get_last_page()))
 get_image(get_last_page())
 
