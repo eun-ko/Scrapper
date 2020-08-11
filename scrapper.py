@@ -3,7 +3,11 @@ import urllib.request
 from bs4 import BeautifulSoup
 import csv
 
-URL="https://store.musinsa.com/app/items/lists/002017/?category=&d_cat_cd=002017&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
+URL="https://store.musinsa.com/app/items/lists/002/?category=&d_cat_cd=002&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
+# 아우터-전체
+
+# URL="https://store.musinsa.com/app/items/lists/001001/?category=&d_cat_cd=001001&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
+# 상의-반팔
 
 def get_last_page():
     result=requests.get(URL)
@@ -17,45 +21,78 @@ def get_image(max_page):
         result=requests.get(f"{URL}&page={page+1}")
         soup=BeautifulSoup(result.text,"html.parser")
         images=soup.find_all("li",{"class":"li_box"})
-        print(f"{page+1}페이지 긁어오는중~~~\n")
+        print(f"{page+1}페이지\n")
         for img in images:
-            image=img.find("div",{"class":"list_img"}).find("a").get("href")
-            # 상세페이지 태그
-            imgurl=f"https://store.musinsa.com{image}"
-            res=requests.get(imgurl)
+            detail=img.find("div",{"class":"list_img"}).find("a").get("href")
+            # 상세페이지 주소
+            detailUrl=f"https://store.musinsa.com{detail}"
+            res=requests.get(detailUrl)
             sp=BeautifulSoup(res.text,"html.parser")
             highresolImg=sp.find("div",{"class":"product-img"}).find("img")
             # 상세페이지의 대표 상품 이미지
             imgURL=highresolImg.get("src")
             imgName=highresolImg.get("alt")
             urllib.request.urlretrieve("https:"+imgURL,(imgName+".jpg").replace("/"," "))
-            #이미지 저장시 상품명에 '/'포함시 디렉토리 경로로 인식함ㅠ->/를 space로 대체
-#urlretrieve는 다운로드 함수
+            
 #img.alt는 이미지 대체 텍스트
 
-
-def save_to_file(infos):
-    file=open("infos.csv",mode="w",encoding='utf-8',newline='')
+def size_csv(max_page):
+    file=open("sizeInfos.csv",mode="w",encoding='utf-8',newline='')
     writer=csv.writer(file)
-    #open한 파일에 작성할거임
-    writer.writerow(["brand-name","item-name","price"])
-    for info in infos:
-        writer.writerow(list(info.values()))
-        #list타입으로 변환
+    writer.writerow(["브랜드","상품이름","사이즈","총장(cm)","어깨너비(cm)","가슴단면(cm)","소매길이(cm)"])
+    for page in range(max_page):
+        result=requests.get(f"{URL}&page={page+1}")
+        soup=BeautifulSoup(result.text,"html.parser")
+        detailpage=soup.find_all("li",{"class":"li_box"})
+        print(f"{page+1}페이지\n")
+        for page in detailpage:
+            detail=page.find("div",{"class":"list_img"}).find("a").get("href")
+            detailUrl=f"https://store.musinsa.com{detail}"
+            res=requests.get(detailUrl)
+            sp=BeautifulSoup(res.text,"html.parser")
+            itemname=sp.find("span",{"class":"product_title"}).get_text()
+            brandname=sp.find("p",{"class":"product_article_contents"}).find("a").get_text()
+            table=sp.find("table",{"class":"table_th_grey"})
+            if table:
+                rows=table.find_all("tr")[3:]
+                for row in rows:
+                    sizeheader=row.find("th").get_text()
+                    if sizeheader=="옵션없음":
+                        sizeheader="단일사이즈"
+                    sizes=row.find_all("td")
+                    if len(sizes)==4:
+                        length=sizes[0].get_text()
+                        shoulder=sizes[1].get_text()
+                        chest=sizes[2].get_text()
+                        sleeve=sizes[3].get_text()
+                        if(row==rows[0]):
+                            writer.writerow([brandname,itemname,sizeheader,length,shoulder,chest,sleeve])
+                        else:
+                            writer.writerow(["","",sizeheader,length,shoulder,chest,sleeve])
+                    elif len(sizes)==3:
+                        length=sizes[0].get_text()
+                        chest=sizes[1].get_text()
+                        sleeve=sizes[2].get_text()
+                        if(row==rows[0]):
+                            writer.writerow([brandname,itemname,sizeheader,length,"",chest,sleeve])
+                        else:
+                            writer.writerow(["","",sizeheader,length,"",chest,sleeve])
+            else:
+                writer.writerow([brandname,itemname,"사이즈 정보 없음"])
+                
     return
 
 def get_items(max_page):
     list=[]
     for page in range(max_page):
-        #페이지 별로 긁어오기(for~range니까 +1한 값으로 이동되게)
         result=requests.get(f"{URL}&page={page+1}")
         soup=BeautifulSoup(result.text,"html.parser")
-        brandName=soup.select("#searchList > li > div.li_inner > div.article_info > p.item_title")
+       
+        brandName=soup.select("#searchList > li > div.li_inner > div.article_info > p.item_title > a")
         itemName=soup.select("#searchList > li > div.li_inner > div.article_info > p.list_info > a")
         price=soup.select("#searchList > li > div.li_inner > div.article_info > p.price")
-        #select의 결과는 list의 형태임 find_all과 같은 메소드
-        
-        for i in range(len(price)):
+
+        for i in range(len(price)):     
             delprice=price[i].find("del")
             #price리스트의 원소 하나하나에 del태그를 따로 변수에 저장
             if delprice:
@@ -64,10 +101,22 @@ def get_items(max_page):
                 #그 태그를 없애기..price[i]안에서 없어지는건가?
             infos={"brand-name":brandName[i].get_text(strip=True),"item-name":itemName[i].get_text(strip=True),"price":price[i].get_text(strip=True)}
             list.append(infos)
-        print(f"{page+1}페이지 긁어오는중~~~\n")
+        print(f"{page+1}페이지\n")
     save_to_file(list)
     return list
 
-save_to_file(get_items(get_last_page()))
-get_image(get_last_page())
+def product_csv(infos):
+    file=open("productInfos.csv",mode="w",encoding='utf-8',newline='')
+    writer=csv.writer(file)
+    #open한 파일에 작성할거임
+    writer.writerow(["brand-name","item-name","price"])
+    for info in infos:
+        writer.writerow(list(info.values()))
+        #list타입으로 변환
+    return
 
+
+# product_csv(get_items(get_last_page()))
+# get_image(get_last_page())
+
+size_csv(get_last_page())
