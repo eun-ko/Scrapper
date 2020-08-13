@@ -3,11 +3,14 @@ import urllib.request
 from bs4 import BeautifulSoup
 import csv
 
-URL="https://store.musinsa.com/app/items/lists/002/?category=&d_cat_cd=002&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
+#URL="https://store.musinsa.com/app/items/lists/002/?category=&d_cat_cd=002&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
 # 아우터-전체
 
 # URL="https://store.musinsa.com/app/items/lists/001001/?category=&d_cat_cd=001001&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
 # 상의-반팔
+
+URL="https://store.musinsa.com/app/items/lists/003/?category=&d_cat_cd=003&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
+#하의-전체
 
 def get_last_page():
     result=requests.get(URL)
@@ -39,7 +42,7 @@ def get_image(max_page):
 def size_csv(max_page):
     file=open("sizeInfos.csv",mode="w",encoding='utf-8',newline='')
     writer=csv.writer(file)
-    writer.writerow(["브랜드","상품이름","사이즈","총장(cm)","어깨너비(cm)","가슴단면(cm)","소매길이(cm)"])
+    writer.writerow(["브랜드","상품이름","상품url","사이즈","총장(cm)","어깨너비(cm)","가슴단면(cm)","소매길이(cm)"])
     for page in range(max_page):
         result=requests.get(f"{URL}&page={page+1}")
         soup=BeautifulSoup(result.text,"html.parser")
@@ -66,20 +69,61 @@ def size_csv(max_page):
                         chest=sizes[2].get_text()
                         sleeve=sizes[3].get_text()
                         if(row==rows[0]):
-                            writer.writerow([brandname,itemname,sizeheader,length,shoulder,chest,sleeve])
+                            writer.writerow([brandname,itemname,detailUrl,sizeheader,length,shoulder,chest,sleeve])
                         else:
-                            writer.writerow(["","",sizeheader,length,shoulder,chest,sleeve])
+                            writer.writerow(["","","",sizeheader,length,shoulder,chest,sleeve])
                     elif len(sizes)==3:
                         length=sizes[0].get_text()
                         chest=sizes[1].get_text()
                         sleeve=sizes[2].get_text()
                         if(row==rows[0]):
-                            writer.writerow([brandname,itemname,sizeheader,length,"",chest,sleeve])
+                            writer.writerow([brandname,itemname,detailUrl,sizeheader,length,"",chest,sleeve])
                         else:
-                            writer.writerow(["","",sizeheader,length,"",chest,sleeve])
+                            writer.writerow(["","","",sizeheader,length,"",chest,sleeve])
             else:
-                writer.writerow([brandname,itemname,"사이즈 정보 없음"])
+                writer.writerow([brandname,itemname,detailUrl,"사이즈 정보 없음"])
                 
+    return
+
+
+def bottom_size_csv(max_page):
+    file=open("bottom_sizeInfos.csv",mode="w",encoding='utf-8',newline='')
+    writer=csv.writer(file)
+    writer.writerow(["브랜드","상품이름","상품url","사이즈","총장","허리단면","허벅지단면","밑위","밑단단면"])
+    for page in range(max_page):
+        result=requests.get(f"{URL}&page={page+1}")
+        soup=BeautifulSoup(result.text,"html.parser")
+        detailpage=soup.find_all("li",{"class":"li_box"})
+        print(f"{page+1}페이지\n")
+        for page in detailpage:
+            detail=page.find("div",{"class":"list_img"}).find("a").get("href")
+            detailUrl=f"https://store.musinsa.com{detail}"
+            res=requests.get(detailUrl)
+            sp=BeautifulSoup(res.text,"html.parser")
+            itemname=sp.find("span",{"class":"product_title"}).get_text()
+            brandname=sp.find("p",{"class":"product_article_contents"}).find("a").get_text()
+            table=sp.find("table",{"class":"table_th_grey"})
+            if table:
+                rows=table.find_all("tr")[3:]
+                for row in rows:
+                    sizeheader=row.find("th").get_text()
+                    sizes=row.find_all("td")
+                    # print(f"사이즈 : {sizeheader}")
+                    if len(sizes)==5:
+                        length=sizes[0].get_text()
+                        w=sizes[1].get_text()
+                        d=sizes[2].get_text()
+                        u=sizes[3].get_text()
+                        s=sizes[4].get_text()
+                        if(row==rows[0]):
+                            writer.writerow([brandname,itemname,detailUrl,sizeheader,length,w,d,u,s])
+                        else:
+                            writer.writerow(["","","",sizeheader,length,w,d,u,s])
+                        # print(f"총장 : {length} 허리단면 : {w} 허벅지단면 : {d} 밑위:{u} 밑단단면 :{s}")
+
+                
+            if not table:
+                writer.writerow([brandname,itemname,detailUrl,"사이즈 정보 없음"])
     return
 
 def get_items(max_page):
@@ -94,11 +138,8 @@ def get_items(max_page):
 
         for i in range(len(price)):     
             delprice=price[i].find("del")
-            #price리스트의 원소 하나하나에 del태그를 따로 변수에 저장
             if delprice:
-                #그 태그가 존재하면
                 delprice.extract()
-                #그 태그를 없애기..price[i]안에서 없어지는건가?
             infos={"brand-name":brandName[i].get_text(strip=True),"item-name":itemName[i].get_text(strip=True),"price":price[i].get_text(strip=True)}
             list.append(infos)
         print(f"{page+1}페이지\n")
@@ -108,7 +149,6 @@ def get_items(max_page):
 def product_csv(infos):
     file=open("productInfos.csv",mode="w",encoding='utf-8',newline='')
     writer=csv.writer(file)
-    #open한 파일에 작성할거임
     writer.writerow(["brand-name","item-name","price"])
     for info in infos:
         writer.writerow(list(info.values()))
@@ -119,4 +159,5 @@ def product_csv(infos):
 # product_csv(get_items(get_last_page()))
 # get_image(get_last_page())
 
-size_csv(get_last_page())
+#size_csv(get_last_page())
+bottom_size_csv(get_last_page())
