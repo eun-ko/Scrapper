@@ -12,7 +12,7 @@ import csv
 #URL="https://store.musinsa.com/app/items/lists/003/?category=&d_cat_cd=003&u_cat_cd=&brand=&sort=pop&sub_sort=&display_cnt=90"
 #하의-전체
 
-URL = "https://display.musinsa.com/display/brands/critic?category2DepthCodes=&category1DepthCode=&colorCodes=&startPrice=&endPrice=&exclusiveYn=&includeSoldOut=&saleGoods=&sortCode=pop&tags=&page=1&size=90&listViewType=small"
+URL = "https://display.musinsa.com/display/brands/critic?category2DepthCodes=&category1DepthCode=&colorCodes=&startPrice=&endPrice=&exclusiveYn=&includeSoldOut=&saleGoods=&sortCode=pop&tags="
 
 def get_last_page():
     result=requests.get(URL)
@@ -56,6 +56,7 @@ def get_image_by_brand(max_page):
             highresolImg=sp.find("div",{"class":"product-img"}).find("img")
             imgURL=highresolImg.get("src")
             imgName=highresolImg.get("alt")
+            # print(f"{page+1}페이지 {imgName}")
             urllib.request.urlretrieve("https:"+imgURL,(imgName+".jpg").replace("/"," ").replace("*"," "))
 
 def size_csv(max_page):
