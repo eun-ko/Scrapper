@@ -19,15 +19,16 @@ print(driver.get_window_size())
 
 for width in browser_width:
   driver.set_window_size(width,MY_BROWSER_HEIGHT)
-  time.sleep(3)
   driver.execute_script("window.scrollTo(0,0)") #맨 위로 이동
+  time.sleep(2)
   scroll_size=driver.execute_script("return document.body.scrollHeight") 
   #return-파이썬으로 반환됨
   #print(scroll_size/MY_BROWSER_HEIGHT)
   #scroll size/ browser size ==스크롤 횟수
   total_scroll_numbers=math.ceil(scroll_size / MY_BROWSER_HEIGHT)
   
-  for scroll_number in range(total_scroll_numbers):
-    driver.execute_script(f"window.scrollTo(0,{(scroll_number+1)*MY_BROWSER_HEIGHT})")
+  for scroll_number in range(total_scroll_numbers+1):
+    driver.execute_script(f"window.scrollTo(0,{(scroll_number)*MY_BROWSER_HEIGHT})")
+    driver.save_screenshot(f"screenshots/{width}x{scroll_number+1}.png")
     time.sleep(2)
   

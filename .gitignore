@@ -1,6 +1,7 @@
 
 webdriver/
 __pycache__/config.cpython-36.pyc
+screenshots/
 
 config.py
 debug.log
