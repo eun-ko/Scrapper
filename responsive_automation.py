@@ -31,3 +31,4 @@ for width in browser_width:
     driver.execute_script(f"window.scrollTo(0,{(scroll_number)*MY_BROWSER_HEIGHT})")
     driver.save_screenshot(f"screenshots/{width}x{scroll_number+1}.png")
     time.sleep(2)
+  
