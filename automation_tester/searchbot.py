@@ -22,8 +22,11 @@ class SearchBot():
     search_bar.send_keys(self.keyword)
     search_bar.send_keys(Keys.ENTER) 
     #send_keys는 키보드 인풋만 가능. 변수 전달 x
-    elements_to_exclude=WebDriverWait(self.driver,10).until(EC.presence_of_element_located((By.CLASS_NAME,"g-blk")))
-    #element 위치 생길때까지 wait , 필요없는 요소(첫페이지에만 등장) 삭제
+    try:
+      elements_to_exclude=WebDriverWait(self.driver,10).until(EC.presence_of_element_located((By.CLASS_NAME,"g-blk")))
+      #element 위치 생길때까지 wait , 필요없는 요소(첫페이지에만 등장) 삭제
+    except Exception:
+      pass
     pagination=self.driver.find_elements_by_tag_name("td")
     del pagination[0:2]
     flag=True
@@ -38,8 +41,6 @@ class SearchBot():
       for index,search_result in enumerate(search_results_wrapper):
         search_result.screenshot(f"screenshots/{self.keyword}_{pagination_index+1}_{index+1}.png")
       p.click()
-
-
 
 Google=SearchBot("ewha")
 Google.start_search()
