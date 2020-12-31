@@ -35,19 +35,19 @@ def extract_infos(hashtag):
   time.sleep(1)
   related_hashtags=driver.find_elements_by_class_name("yCE8d")
   for related_hashtag in related_hashtags[:10]:
+    time.sleep(1)
     ActionChains(driver).move_to_element(related_hashtag).context_click().perform()
     #ActionChain 동시에 수행
     wsh.SendKeys("{DOWN}")
     wsh.SendKeys("{ENTER}")
     used_hashtags.append(related_hashtag.text.replace("\n","_"))
-    time.sleep(1)
-  print(used_hashtags)
+  used_hashtags.reverse()
+  driver.set_window_size(430,900)
   for i,window in enumerate(driver.window_handles):
     driver.switch_to.window(window)
     if i!=0:
       grid_img=wait_for((By.XPATH,"//*[@id='react-root']/section/main/article/div[1]/div"))
-      print(grid_img)
-      time.sleep(1)
+      driver.execute_script("window.scrollTo(0, 150)")
       grid_img.screenshot(f"screenshots/{hashtag}_{used_hashtags[i-1]}.png")
       #첫 window(i==0)는 내 피드. 인덱스-1 주의
 
